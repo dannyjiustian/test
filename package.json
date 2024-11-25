@@ -29,11 +29,14 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@prisma/client": "^5.22.0",
     "@whiskeysockets/baileys": "^6.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "joi": "^17.13.3",
-    "qrcode": "^1.5.4"
+    "prisma": "^5.22.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.32.6"
   }
 }
