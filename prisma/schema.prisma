@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id_user    String   @id @unique @default(uuid()) @db.Char(36)
+  email      String   @unique
+  name       String   @db.VarChar(100)
+  username   String   @unique @db.VarChar(50)
+  password   String   @db.VarChar(200)
+  key        String   @db.Char(50)
+  is_verify  Boolean  @default(false)
+  is_active  Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  devices  devices[]  @relation("UserDevices")
+  contacts contacts[] @relation("UserContacts")
+  messages messages[] @relation("UserMessages")
+}
+
+enum DeviceStatus {
+  unknown
+  wait_for_auth
+  authenticated
+  sync_wa_data
+  connected
+  disconnected
+}
+
+model devices {
+  id_device    String       @id @default(uuid()) @db.Char(36)
+  id_user      String       @db.Char(36)
+  phone_number String       @unique @db.VarChar(14)
+  name         String       @db.VarChar(100)
+  desc         String       @db.Text
+  status       DeviceStatus
+  key          String       @unique @db.VarChar(50)
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+
+  // Relations
+  user     users      @relation("UserDevices", fields: [id_user], references: [id_user])
+  sessions sessions[] @relation("Sessions")
+}
+
+model contacts {
+  id_contact   String   @id @default(uuid()) @db.Char(36)
+  id_user      String   @db.Char(36)
+  phone_number String   @db.VarChar(14)
+  name         String   @db.VarChar(100)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  user users @relation("UserContacts", fields: [id_user], references: [id_user])
+}
+
+model messages {
+  id_message   String   @id @default(uuid()) @db.Char(36)
+  id_user      String   @db.Char(36)
+  phone_number String   @db.VarChar(14)
+  name         String?  @db.VarChar(100)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  user users @relation("UserMessages", fields: [id_user], references: [id_user])
+}
+
+model sessions {
+  id_session String   @id @default(uuid()) @db.Char(36)
+  id_device  String   @db.Char(36)
+  name       String   @db.VarChar(255)
+  data       String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  device devices @relation("Sessions", fields: [id_device], references: [id_device])
+}
