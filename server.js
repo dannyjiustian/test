@@ -2,12 +2,13 @@
  * English: imports the modules used
  * Indonesian: mengimpor modul yang digunakan
  */
-import {
-  serverExpress,
-  portServerConfig,
-} from "./api/v1/configs/server.config.js";
+import { serverExpress, serverSocket } from "./api/v1/configs/server.config.js";
 import route from "./api/v1/routes/routes.js";
-import { connectToWhatsApp } from "./api/v1/controllers/bot.controller.js";
+import socketConfig from "./api/v1/configs/io.config.js";
+import envConfig from "./api/v1/configs/env.config.js";
+import queueConfig from "./api/v1/configs/queue.config.js";
+
+queueConfig.configureQueueListeners();
 
 /**
  * English: configuration of modules used
@@ -16,11 +17,17 @@ import { connectToWhatsApp } from "./api/v1/controllers/bot.controller.js";
 serverExpress.use(route);
 
 /**
+ * English: call of socket.io connection
+ * Indonesian: panggil connection socket.io
+ */
+socketConfig();
+
+/**
  * English: call of whatsapp connection
  * Indonesian: panggil connection whatsapp
  */
-connectToWhatsApp().catch((err) => console.log("unexpected error: " + err)); // catch any errors
-
-serverExpress.listen(portServerConfig, () => {
+const portServerConfig = envConfig.get("portServerConfig");
+serverSocket.listen(portServerConfig, () => {
   console.log(`Server runing on http://localhost:${portServerConfig}`);
+  console.log(`Websocket runing on http://localhost:${portServerConfig}`);
 });
