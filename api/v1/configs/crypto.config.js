@@ -2,12 +2,7 @@
  * English: Imports the modules used
  * Indonesian: Mengimpor modul yang digunakan
  */
-import {
-  scryptSync,
-  randomBytes,
-  createCipheriv,
-  createDecipheriv,
-} from "crypto";
+import { scryptSync, randomBytes, createCipheriv, createDecipheriv } from "crypto";
 import envConfig from "./env.config.js";
 
 /**
