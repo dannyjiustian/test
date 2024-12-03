@@ -92,6 +92,11 @@ const logout = async (req, res) => {
   });
 };
 
+// await sock.sendMessage(`${to}@s.whatsapp.net`, {
+//   image: {url: "https://images.tokopedia.net/img/cache/700/VqbcmM/2022/10/4/d62bafd6-ea56-459b-baee-c7ef33273e11.jpg"},
+//   caption: "caption",
+// });
+
 const sendWeb = async (req, res) => {
   const validationErrors = handlerController.handleValidationError(validationController.sendWhatsAppWeb(req.body));
   if (Object.keys(validationErrors).length > 0)
