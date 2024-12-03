@@ -26,16 +26,16 @@ model users {
   updated_at DateTime @updatedAt
 
   // Relations
-  devices  devices[]  @relation("UserDevices")
-  contacts contacts[] @relation("UserContacts")
-  messages messages[] @relation("UserMessages")
+  device  devices[]  @relation("UserDevices")
+  contact contacts[] @relation("UserContacts")
+  message messages[] @relation("UserMessages")
 }
 
 enum DeviceStatus {
   unknown
   wait_for_auth
   authenticated
-  sync_wa_data
+  synchronizing
   connected
   disconnected
 }
@@ -52,8 +52,9 @@ model devices {
   updated_at   DateTime     @updatedAt
 
   // Relations
-  user     users      @relation("UserDevices", fields: [id_user], references: [id_user])
-  sessions sessions[] @relation("Sessions")
+  user    users      @relation("UserDevices", fields: [id_user], references: [id_user])
+  message messages[] @relation("DeviceMessages")
+  session sessions[] @relation("Sessions")
 }
 
 model contacts {
@@ -68,26 +69,43 @@ model contacts {
   user users @relation("UserContacts", fields: [id_user], references: [id_user])
 }
 
+enum MessageStatus {
+  error
+  pending
+  in_server
+  delivery
+  read
+  played
+}
+
 model messages {
-  id_message   String   @id @default(uuid()) @db.Char(36)
-  id_user      String   @db.Char(36)
-  phone_number String   @db.VarChar(14)
-  name         String?  @db.VarChar(100)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  id_message   String        @id @default(uuid()) @db.Char(36)
+  id_device    String        @db.Char(36)
+  id_user      String        @db.Char(36)
+  id_send      String        @unique @db.VarChar(50)
+  phone_number String        @db.VarChar(14)
+  name         String?       @db.VarChar(100)
+  message      String        @db.Text
+  status       MessageStatus
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
 
   // Relations
-  user users @relation("UserMessages", fields: [id_user], references: [id_user])
+  device devices @relation("DeviceMessages", fields: [id_device], references: [id_device])
+  user   users   @relation("UserMessages", fields: [id_user], references: [id_user])
 }
 
 model sessions {
   id_session String   @id @default(uuid()) @db.Char(36)
   id_device  String   @db.Char(36)
-  name       String   @db.VarChar(255)
+  filename   String   @db.VarChar(255)
   data       String   @db.Text
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   // Relations
   device devices @relation("Sessions", fields: [id_device], references: [id_device])
+
+  // Add this line to create a unique constraint
+  @@unique([id_device, filename])
 }
