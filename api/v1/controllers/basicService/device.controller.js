@@ -46,16 +46,14 @@ const index = async (req, res) => {
         code: 404,
       });
 
-    const transformedResults = results.map(
-      ({ id_device, phone_number, name, desc, key, status }) => ({
-        id_device: uuidHashConfig.encrypt(id_device),
-        phone_number,
-        name,
-        desc,
-        key,
-        status,
-      })
-    );
+    const transformedResults = results.map(({ id_device, phone_number, name, desc, key, status }) => ({
+      id_device: uuidHashConfig.encrypt(id_device),
+      phone_number,
+      name,
+      desc,
+      key,
+      status,
+    }));
 
     return handlerController.sendResponse({
       res,
@@ -124,9 +122,7 @@ const show = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.device(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.device(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -160,7 +156,7 @@ const store = async (req, res) => {
         name: true,
         desc: true,
         key: true,
-        statust: true,
+        status: true,
       },
       data: {
         id_user,
@@ -174,8 +170,7 @@ const store = async (req, res) => {
 
     return handlerController.sendResponse({
       res,
-      message:
-        "Add new device successfully, please active device with linked device whatsapp!",
+      message: "Add new device successfully, please active device with linked device whatsapp!",
       data: {
         phone_number: newDevice.phone_number,
         name: newDevice.name,
@@ -196,9 +191,7 @@ const store = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.device(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.updateDevice(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -210,7 +203,7 @@ const update = async (req, res) => {
 
   const { id_user } = req;
   const id_device = uuidHashConfig.decrypt(req.params.idDevice);
-  const { phone_number, name, desc } = req.body;
+  const { name, desc } = req.body;
 
   try {
     const checkExistsDevice = await prisma.devices.count({
@@ -228,22 +221,6 @@ const update = async (req, res) => {
         code: 404,
       });
 
-    const phoneConflict = await prisma.devices.findFirst({
-      where: {
-        id_user,
-        NOT: { id_device },
-        phone_number,
-      },
-    });
-
-    if (phoneConflict)
-      return handlerController.sendResponse({
-        res,
-        message: "Phone number already exists for another device!",
-        status: false,
-        code: 409, // Conflict
-      });
-
     const updateDevice = await prisma.devices.update({
       select: {
         phone_number: true,
@@ -251,7 +228,6 @@ const update = async (req, res) => {
         desc: true,
       },
       data: {
-        phone_number,
         name,
         desc,
       },
@@ -307,11 +283,7 @@ const destroyRequest = async (req, res) => {
         code: 404,
       });
 
-    const checkAttempts = await redisConfig.handleRequestAttempt(
-      result.user.email,
-      "removeDeviceEmail",
-      "blockedRemoveDeviceEmail"
-    );
+    const checkAttempts = await redisConfig.handleRequestAttempt(result.user.email, "removeDeviceEmail", "blockedRemoveDeviceEmail");
 
     if (checkAttempts && !checkAttempts.status)
       return handlerController.sendResponse({
@@ -321,18 +293,16 @@ const destroyRequest = async (req, res) => {
         code: 429,
       });
 
-    await queueConfig.queueEmail(result.user.email, "removeDevice");
+    await queueConfig.queueEmailOTP(result.user.email, "removeDevice");
     return handlerController.sendResponse({
       res,
-      message:
-        "OTP sent to email successfully, please use OTP from email to delete the device!",
+      message: "OTP sent to email successfully, please use OTP from email to delete the device!",
       data: { email: result.user.email },
     });
   } catch (error) {
     return handlerController.sendResponse({
       res,
-      message:
-        "An error occurred during checking and sending email for delete device.",
+      message: "An error occurred during checking and sending email for delete device.",
       status: false,
       data: error.message,
       code: 500,
@@ -341,9 +311,7 @@ const destroyRequest = async (req, res) => {
 };
 
 const destroyConfirm = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.onlyOTP(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.onlyOTP(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -379,11 +347,7 @@ const destroyConfirm = async (req, res) => {
         code: 404,
       });
 
-    const checkAttempts = await redisConfig.handleRequestAttempt(
-      result.user.email,
-      "removeDeviceOTP",
-      "blockedRemoveDeviceOTP"
-    );
+    const checkAttempts = await redisConfig.handleRequestAttempt(result.user.email, "removeDeviceOTP", "blockedRemoveDeviceOTP");
 
     if (checkAttempts && !checkAttempts.status)
       return handlerController.sendResponse({
@@ -393,11 +357,7 @@ const destroyConfirm = async (req, res) => {
         code: 429,
       });
 
-    const existingOTP = await redisConfig.verifyOtp(
-      result.user.email,
-      otp,
-      "removeDevice"
-    );
+    const existingOTP = await redisConfig.verifyOtp(result.user.email, otp, "removeDevice");
 
     if (existingOTP && !existingOTP.status)
       return handlerController.sendResponse({
@@ -419,16 +379,8 @@ const destroyConfirm = async (req, res) => {
       },
     });
 
-    await redisConfig.resetRequestAttempts(
-      result.user.email,
-      "removeDeviceEmail",
-      "blockedRemoveDeviceEmail"
-    );
-    await redisConfig.resetRequestAttempts(
-      result.user.email,
-      "removeDeviceOTP",
-      "blockedRemoveDeviceOTP"
-    );
+    await redisConfig.resetRequestAttempts(result.user.email, "removeDeviceEmail", "blockedRemoveDeviceEmail");
+    await redisConfig.resetRequestAttempts(result.user.email, "removeDeviceOTP", "blockedRemoveDeviceOTP");
 
     return handlerController.sendResponse({
       res,
@@ -441,8 +393,7 @@ const destroyConfirm = async (req, res) => {
   } catch (error) {
     return handlerController.sendResponse({
       res,
-      message:
-        "An error occurred during checking and sending email for delete device.",
+      message: "An error occurred during checking and sending email for delete device.",
       status: false,
       data: error.message,
       code: 500,
