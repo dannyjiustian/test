@@ -45,13 +45,9 @@ class ValidationController {
         name: joi.string().min(3).max(100).required(),
         username: joi.string().min(3).max(50).lowercase().required(),
         password: joi.string().alphanum().min(8).required(),
-        retypePassword: joi
-          .string()
-          .valid(joi.ref("password"))
-          .required()
-          .messages({
-            "any.only": "Password do not match",
-          }),
+        retypePassword: joi.string().valid(joi.ref("password")).required().messages({
+          "any.only": "Password do not match",
+        }),
       })
       .options({ abortEarly: false });
     return userRegisterSchema.validate(requestData);
@@ -87,6 +83,20 @@ class ValidationController {
   }
 
   /**
+   * English: Validates update device account activation request data
+   * Indonesian: Memvalidasi data permintaan pengiriman ulang registrasi
+   */
+  updateDevice(requestData) {
+    const updateDeviceSchema = joi
+      .object({
+        name: joi.string().min(3).max(100).required(),
+        desc: joi.string().required(),
+      })
+      .options({ abortEarly: false });
+    return updateDeviceSchema.validate(requestData);
+  }
+
+  /**
    * English: Validates only otp account activation request data
    * Indonesian: Memvalidasi data permintaan pengiriman ulang registrasi
    */
@@ -114,30 +124,46 @@ class ValidationController {
   }
 
   /**
-   * English: Validates test data
-   * Indonesian: Memvalidasi data uji
+   * English: Validates authentication whatsapp activation request data
+   * Indonesian: Memvalidasi data permintaan pengiriman ulang registrasi
    */
-  validateTest(requestData) {
-    const testSchema = joi
+  authWhatsApp(requestData) {
+    const authWhatsAppSchema = joi
       .object({
-        id_socket: joi.string().required(),
+        id_device: joi.string().max(40).required(),
+        use_number: joi.boolean().required(),
       })
       .options({ abortEarly: false });
-    return testSchema.validate(requestData);
+    return authWhatsAppSchema.validate(requestData);
   }
 
   /**
-   * English: Validates send message data
-   * Indonesian: Memvalidasi data pengiriman pesan
+   * English: Validates send message whatsapp data
+   * Indonesian: Memvalidasi data pengiriman pesan whatsapp
    */
-  validateSend(requestData) {
-    const sendSchema = joi
+  sendWhatsAppWeb(requestData) {
+    const sendWhatsAppSchema = joi
       .object({
-        to: joi.number().required().integer(),
+        id_device: joi.string().max(40).required(),
+        to_number: joi.string().max(14).pattern(/^\d+$/).required(),
         message: joi.string().required(),
       })
       .options({ abortEarly: false });
-    return sendSchema.validate(requestData);
+    return sendWhatsAppSchema.validate(requestData);
+  }
+
+  /**
+   * English: Validates send message whatsapp data
+   * Indonesian: Memvalidasi data pengiriman pesan whatsapp
+   */
+  sendWhatsAppAPI(requestData) {
+    const sendWhatsAppSchema = joi
+      .object({
+        to_number: joi.string().max(14).pattern(/^\d+$/).required(),
+        message: joi.string().required(),
+      })
+      .options({ abortEarly: false });
+    return sendWhatsAppSchema.validate(requestData);
   }
 }
 
