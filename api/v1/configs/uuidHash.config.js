@@ -39,9 +39,7 @@ class UuidHashConfig {
    * @returns {string} - The decrypted UUID.
    */
   decrypt(encrypted) {
-    const decrypted = new Hashids(this.secretKey)
-      .decodeHex(encrypted)
-      .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+    const decrypted = new Hashids(this.secretKey).decodeHex(encrypted).replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
     return decrypted;
   }
 }
