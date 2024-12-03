@@ -26,9 +26,7 @@ class RedisConfig {
 
     // English: Log an error message if there is an issue with Redis.
     // Indonesian: Mencatat pesan kesalahan jika terjadi masalah dengan Redis.
-    this.redisClient.on("error", (err) =>
-      console.error("Redis Client Core Error", err)
-    );
+    this.redisClient.on("error", (err) => console.error("Redis Client Core Error", err));
   }
 
   /**
@@ -118,11 +116,7 @@ class RedisConfig {
    * @param {string} typeBlocked - Type for blocked key (e.g., blockedRegisterEmail, blockedRegisterOTP).
    * @returns {Promise<Object>} - Status and message of the request handling process.
    */
-  async handleRequestAttempt(
-    identify,
-    typeAttempts = "registerEmail",
-    typeBlocked = "blockedRegisterEmail"
-  ) {
+  async handleRequestAttempt(identify, typeAttempts = "registerEmail", typeBlocked = "blockedRegisterEmail") {
     if (await this.isBlocked(identify, typeBlocked))
       return {
         status: false,
@@ -141,9 +135,7 @@ class RedisConfig {
       await this.redisClient.set(keyId, currentTime, "EX", blockDuration);
       return {
         status: false,
-        message: `Too many request attempts. Please try again in ${
-          blockDuration / 60
-        } minutes.`,
+        message: `Too many request attempts. Please try again in ${blockDuration / 60} minutes.`,
       };
     }
   }
@@ -155,11 +147,7 @@ class RedisConfig {
    * @param {string} typeAttempts - Type of request (e.g., registerEmail, registerOTP).
    * @param {string} typeBlocked - Type for blocked key (e.g., blockedRegisterEmail, blockedRegisterOTP).
    */
-  async resetRequestAttempts(
-    identify,
-    typeAttempts = "registerEmail",
-    typeBlocked = "blockedRegisterEmail"
-  ) {
+  async resetRequestAttempts(identify, typeAttempts = "registerEmail", typeBlocked = "blockedRegisterEmail") {
     await this.redisClient.del(this.getKey(typeAttempts, identify));
     await this.redisClient.del(this.getKey(typeBlocked, identify));
   }
@@ -173,9 +161,9 @@ class RedisConfig {
   async saveOtp(email, otp, type) {
     try {
       // Menyimpan OTP dan type dalam hash
-      await this.redisClient.hset(`otp:${type}:${email}`, 'otp', otp, 'type', type);
+      await this.redisClient.hset(`otp:${type}:${email}`, "otp", otp, "type", type);
       // Menetapkan kedaluwarsa (5 menit)
-      await this.redisClient.expire(`otp:${type}:${email}`, 300); 
+      await this.redisClient.expire(`otp:${type}:${email}`, 300);
       console.log("OTP saved!");
     } catch (err) {
       throw new Error("Error saving OTP to Redis:", err);
@@ -192,10 +180,9 @@ class RedisConfig {
   async verifyOtp(email, otp, type) {
     try {
       const otpData = await this.redisClient.hgetall(`otp:${type}:${email}`);
-  
-      if (!otpData || otpData.otp !== otp || otpData.type !== type) 
-        return { status: false, message: "Invalid OTP entered!", code: 401 };
-      
+
+      if (!otpData || otpData.otp !== otp || otpData.type !== type) return { status: false, message: "Invalid OTP entered!", code: 401 };
+
       await this.redisClient.del(`otp:${type}:${email}`);
       return;
     } catch (err) {
