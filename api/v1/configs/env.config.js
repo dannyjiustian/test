@@ -58,15 +58,13 @@ class EnvConfig {
        * English: Encoded secret key for JWT access.
        * Indonesian: Kunci rahasia terenkripsi untuk akses JWT.
        */
-      secretAccessKeyJWT:
-        Base64.encode(process.env.SECRET_ACCESS_KEY_JWT) || "changeAccessKey",
+      secretAccessKeyJWT: Base64.encode(process.env.SECRET_ACCESS_KEY_JWT) || "changeAccessKey",
 
       /**
        * English: Encoded secret key for JWT refresh tokens.
        * Indonesian: Kunci rahasia terenkripsi untuk token refresh JWT.
        */
-      secretRefreshKeyJWT:
-        Base64.encode(process.env.SECRET_REFRESH_KEY_JWT) || "changeRefreshKey",
+      secretRefreshKeyJWT: Base64.encode(process.env.SECRET_REFRESH_KEY_JWT) || "changeRefreshKey",
 
       /**
        * English: Salt value for bcrypt hashing.
@@ -78,15 +76,13 @@ class EnvConfig {
        * English: Secret key for encryption using crypto.
        * Indonesian: Kunci rahasia untuk enkripsi menggunakan crypto.
        */
-      secretEncryptCryptoKey:
-        process.env.SECRET_ENCRYPT_CRYPTO_KEY || "72971be05feccec5ec1f5de15f39b06",
+      secretEncryptCryptoKey: process.env.SECRET_ENCRYPT_CRYPTO_KEY || "72971be05feccec5ec1f5de15f39b06",
 
       /**
        * English: Secret key for encryption using Hashids.
        * Indonesian: Kunci rahasia untuk enkripsi menggunakan Hashids.
        */
-      secretEncryptHashidsKey:
-        process.env.SECRET_ENCRYPT_HASHIDS_KEY || "ad812980bc8d9e9f0870a87c9923b12",
+      secretEncryptHashidsKey: process.env.SECRET_ENCRYPT_HASHIDS_KEY || "ad812980bc8d9e9f0870a87c9923b12",
 
       /**
        * English: Server port, default is 3000.
