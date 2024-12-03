@@ -18,16 +18,15 @@ class VerifyTokenController {
    * @param {object} res - The HTTP response object
    * @param {function} next - The next middleware function
    */
-  checkVerifRefresh(req, res, next) {
+  checkVerifyRefresh(req, res, next) {
     const bearer = req.headers.authorization;
-    if (!bearer) {
+    if (!bearer)
       return handlerController.sendResponse({
         res,
         message: "Please enter bearer authentication!",
         status: false,
         code: 401,
       });
-    }
 
     const token = bearer.split(" ")[1];
     try {
@@ -52,16 +51,15 @@ class VerifyTokenController {
    * @param {object} res - The HTTP response object
    * @param {function} next - The next middleware function
    */
-  checkVerif(req, res, next) {
+  checkVerifyAccess(req, res, next) {
     const bearer = req.headers.authorization;
-    if (!bearer) {
+    if (!bearer)
       return handlerController.sendResponse({
         res,
         message: "Please enter bearer authentication!",
         status: false,
         code: 401,
       });
-    }
 
     const token = bearer.split(" ")[1];
     try {
