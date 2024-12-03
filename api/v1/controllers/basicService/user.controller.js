@@ -22,9 +22,7 @@ const prisma = new PrismaClient();
  * Indonesian: Fungsi-fungsi yang akan digunakan di endpoint
  */
 const login = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.userLogin(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.userLogin(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -50,11 +48,7 @@ const login = async (req, res) => {
         code: 401,
       });
 
-    const checkAttempts = await redisConfig.handleRequestAttempt(
-      user.email,
-      "loginEmail",
-      "blockedLoginEmail"
-    );
+    const checkAttempts = await redisConfig.handleRequestAttempt(user.email, "loginEmail", "blockedLoginEmail");
 
     if (checkAttempts && !checkAttempts.status)
       return handlerController.sendResponse({
@@ -72,11 +66,10 @@ const login = async (req, res) => {
         code: 401,
       });
 
-    await queueConfig.queueEmail(user.email, "login");
+    await queueConfig.queueEmailOTP(user.email, "login");
     return handlerController.sendResponse({
       res,
-      message:
-        "Login successfully, please validation login via OTP from email!",
+      message: "Login successfully, please validation login via OTP from email!",
       data: { email: user.email },
     });
   } catch (error) {
@@ -91,9 +84,7 @@ const login = async (req, res) => {
 };
 
 const loginValidation = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.userLoginValidation(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.userLoginValidation(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -111,10 +102,7 @@ const loginValidation = async (req, res) => {
       },
     });
 
-    if (
-      !user &&
-      !(await bcryptConfig.verify(password, user ? user.password : ""))
-    )
+    if (!user && !(await bcryptConfig.verify(password, user ? user.password : "")))
       return handlerController.sendResponse({
         res,
         message: "Invalid OTP entered!",
@@ -122,11 +110,7 @@ const loginValidation = async (req, res) => {
         code: 401,
       });
 
-    const checkAttempts = await redisConfig.handleRequestAttempt(
-      user.email,
-      "loginOTP",
-      "blockedLoginOTP"
-    );
+    const checkAttempts = await redisConfig.handleRequestAttempt(user.email, "loginOTP", "blockedLoginOTP");
     if (checkAttempts && !checkAttempts.status)
       return handlerController.sendResponse({
         res,
@@ -153,16 +137,8 @@ const loginValidation = async (req, res) => {
       identity: uuidHashConfig.encrypt(user.id_user),
     });
 
-    await redisConfig.resetRequestAttempts(
-      user.email,
-      "loginEmail",
-      "blockedLoginEmail"
-    );
-    await redisConfig.resetRequestAttempts(
-      user.email,
-      "loginOTP",
-      "blockedLoginOTP"
-    );
+    await redisConfig.resetRequestAttempts(user.email, "loginEmail", "blockedLoginEmail");
+    await redisConfig.resetRequestAttempts(user.email, "loginOTP", "blockedLoginOTP");
 
     return handlerController.sendResponse({
       res,
@@ -185,9 +161,7 @@ const loginValidation = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.userRegister(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.userRegister(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -239,11 +213,10 @@ const register = async (req, res) => {
           id_user: existingUser.id_user,
         },
       });
-      await queueConfig.queueEmail(updateUser.email, "register");
+      await queueConfig.queueEmailOTP(updateUser.email, "register");
       return handlerController.sendResponse({
         res,
-        message:
-          "Registration successfully, please active account via OTP from email!",
+        message: "Registration successfully, please active account via OTP from email!",
         data: { username: updateUser.username, email: updateUser.email },
       });
     }
@@ -260,11 +233,10 @@ const register = async (req, res) => {
       },
     });
 
-    await queueConfig.queueEmail(newUser.email, "register");
+    await queueConfig.queueEmailOTP(newUser.email, "register");
     return handlerController.sendResponse({
       res,
-      message:
-        "Registration successfully, please active account via OTP from email!",
+      message: "Registration successfully, please active account via OTP from email!",
       data: { username: newUser.username, email: newUser.email },
     });
   } catch (error) {
@@ -279,9 +251,7 @@ const register = async (req, res) => {
 };
 
 const accountActivation = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.userRegisterActivation(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.userRegisterActivation(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -294,11 +264,7 @@ const accountActivation = async (req, res) => {
   const { email, otp } = req.body;
 
   try {
-    const checkAttempts = await redisConfig.handleRequestAttempt(
-      email,
-      "registerOTP",
-      "blockedRegisterOTP"
-    );
+    const checkAttempts = await redisConfig.handleRequestAttempt(email, "registerOTP", "blockedRegisterOTP");
     if (checkAttempts && !checkAttempts.status)
       return handlerController.sendResponse({
         res,
@@ -330,11 +296,7 @@ const accountActivation = async (req, res) => {
     });
 
     await redisConfig.resetRequestAttempts(email);
-    await redisConfig.resetRequestAttempts(
-      email,
-      "registerOTP",
-      "blockedRegisterOTP"
-    );
+    await redisConfig.resetRequestAttempts(email, "registerOTP", "blockedRegisterOTP");
 
     return handlerController.sendResponse({
       res,
