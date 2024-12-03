@@ -41,13 +41,11 @@ const index = async (req, res) => {
         code: 404,
       });
 
-    const transformedResults = results.map(
-      ({ id_contact, phone_number, name }) => ({
-        id_contact: uuidHashConfig.encrypt(id_contact),
-        phone_number,
-        name,
-      })
-    );
+    const transformedResults = results.map(({ id_contact, phone_number, name }) => ({
+      id_contact: uuidHashConfig.encrypt(id_contact),
+      phone_number,
+      name,
+    }));
 
     return handlerController.sendResponse({
       res,
@@ -110,9 +108,7 @@ const show = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.contact(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.contact(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
@@ -135,8 +131,7 @@ const store = async (req, res) => {
     if (checkExistsContact > 0)
       return handlerController.sendResponse({
         res,
-        message:
-          "Phone number already registered at your account, please use another number!",
+        message: "Phone number already registered at your account, please use another number!",
         status: false,
         code: 409,
       });
@@ -173,9 +168,7 @@ const store = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const validationErrors = handlerController.handleValidationError(
-    validationController.contact(req.body)
-  );
+  const validationErrors = handlerController.handleValidationError(validationController.contact(req.body));
   if (Object.keys(validationErrors).length > 0)
     return handlerController.sendResponse({
       res,
