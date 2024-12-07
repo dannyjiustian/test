@@ -8,6 +8,14 @@ import handlebars from "handlebars";
 import envConfig from "./env.config.js";
 import { createTransport } from "nodemailer";
 import redisConfig from "./redis.config.js";
+import whatsAppService from "../controllers/coreWhatsApp/whatsAppService.controller.js";
+import { PrismaClient } from "@prisma/client";
+
+/**
+ * English: Initialize Prisma client
+ * Indonesian: Inisialisasi Prisma client
+ */
+const prisma = new PrismaClient();
 
 /**
  * English: Class to configure and manage queues, OTP generation, Redis, and email sending
@@ -50,6 +58,7 @@ class QueueConfig {
     // Indonesian: Konfigurasi antrian email dan WhatsApp
     this.emailQueue = this.createQueueConnection("emailQueue", "email");
     this.whatsappQueue = this.createQueueConnection("whatsappQueue", "whatsapp");
+    this.whatsappBulkQueue = this.createQueueConnection("whatsappBulkQueue", "whatsappBulk");
   }
 
   /**
@@ -93,7 +102,121 @@ class QueueConfig {
     this.emailQueue.on("failed", async (job, err) => {
       console.error(`Failed to send email to ${job.data.to}:`, err);
       if (job.attemptsMade >= 3) {
-        console.log("Job failed 3 times, removing job from queue.");
+        console.log("Job email failed 3 times, removing job from queue.");
+      }
+    });
+
+    this.whatsappQueue.client.on("connect", () =>
+      console.log("Redis client whatsapp queue connected successfully")
+    );
+    this.whatsappQueue.client.on("error", (err) =>
+      console.error("Redis client whatsapp queue connection error:", err)
+    );
+
+    this.whatsappQueue.process(async (job, done) => {
+      const { sessionId, to_number, message, idDevice, id_user, useWeb } = job.data;
+      try {
+        const session = whatsAppService.getSession(sessionId); // Get session dynamically
+        const checkNumber = await whatsAppService.checkNumber(session, to_number);
+        if (!checkNumber) throw new Error(`Number ${to_number} does not exist`);
+
+        const result = await session.sendMessage(checkNumber, { text: message });
+
+        if (useWeb) {
+          // Save to DB
+          const findName = await prisma.contacts.findFirst({
+            select: { name: true },
+            where: {
+              phone_number: to_number,
+              id_user,
+            },
+          });
+          await prisma.messages.create({
+            data: {
+              id_device: idDevice,
+              id_user,
+              id_send: result.key.id,
+              phone_number: to_number,
+              name: findName ? findName.name : null,
+              message,
+              status: "pending",
+            },
+          });
+        }
+
+        console.log(`Message sent to ${to_number}`);
+        done();
+      } catch (err) {
+        console.error(`Failed to send message to ${to_number}:`, err);
+        done(err);
+      }
+    });
+
+    this.whatsappQueue.on("completed", (job) =>
+      console.log(`Message Whatsapp successfully sent to ${job.data.to_number}`)
+    );
+
+    this.whatsappQueue.on("failed", async (job, err) => {
+      console.error(`Failed to process WhatsApp job for ${job.data.to_number}:`, err);
+      if (job.attemptsMade >= 3) {
+        console.log("Job whatsapp failed 3 times, removing job from queue.");
+      }
+    });
+
+    this.whatsappBulkQueue.client.on("connect", () =>
+      console.log("Redis client whatsapp bulk queue connected successfully")
+    );
+    this.whatsappBulkQueue.client.on("error", (err) =>
+      console.error("Redis client whatsapp bulk queue connection error:", err)
+    );
+
+    this.whatsappBulkQueue.process(async (job, done) => {
+      const { sessionId, to_number, message, idDevice, id_user, useWeb } = job.data;
+      try {
+        const session = whatsAppService.getSession(sessionId); // Get session dynamically
+        const checkNumber = await whatsAppService.checkNumber(session, to_number);
+        if (!checkNumber) throw new Error(`Number ${to_number} does not exist`);
+
+        const result = await session.sendMessage(checkNumber, { text: message });
+
+        if (useWeb) {
+          // Save to DB
+          const findName = await prisma.contacts.findFirst({
+            select: { name: true },
+            where: {
+              phone_number: to_number,
+              id_user,
+            },
+          });
+          await prisma.messages.create({
+            data: {
+              id_device: idDevice,
+              id_user,
+              id_send: result.key.id,
+              phone_number: to_number,
+              name: findName ? findName.name : null,
+              message,
+              status: "pending",
+            },
+          });
+        }
+
+        console.log(`Message sent to ${to_number}`);
+        done();
+      } catch (err) {
+        console.error(`Failed to send message to ${to_number}:`, err);
+        done(err);
+      }
+    });
+
+    this.whatsappBulkQueue.on("completed", (job) =>
+      console.log(`Message Bulk Whatsapp successfully sent to ${job.data.to_number}`)
+    );
+
+    this.whatsappBulkQueue.on("failed", async (job, err) => {
+      console.error(`Failed to process WhatsApp Bulk job for ${job.data.to_number}:`, err);
+      if (job.attemptsMade >= 3) {
+        console.log("Job whatsapp bulk failed 3 times, removing job from queue.");
       }
     });
   }
@@ -180,7 +303,6 @@ class QueueConfig {
    * @param {object} data - Device details
    */
   async queueEmailDeviceDisconnect(email, data) {
-    // Thank you for joining us at FlowSend by Djie's. We're excited to have you on board!
     // Read the HTML template file
     const templateSource = fs.readFileSync("./email-template/template.html", "utf-8");
 
@@ -209,6 +331,25 @@ class QueueConfig {
     await this.emailQueue.add(emailData, {
       attempts: 3,
       backoff: 5000,
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
+  }
+
+  async queueWhatsAppMessage(data) {
+    await this.whatsappQueue.add(data, {
+      attempts: 3,
+      backoff: 5000,
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
+  }
+
+  async queueWhatsAppBulkMessage(data, delay) {
+    await this.whatsappBulkQueue.add(data, {
+      attempts: 3,
+      backoff: 5000,
+      delay,
       removeOnComplete: true,
       removeOnFail: true,
     });
