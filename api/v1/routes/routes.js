@@ -71,7 +71,9 @@ route.delete(`${apiVersion}/contacts/:idContact`, verifyTokenController.checkVer
 route.post(`${apiVersion}/device/auth`, verifyTokenController.checkVerifyAccess, whatsApp.authentication);
 route.delete(`${apiVersion}/device/logout/:idDevice`, verifyTokenController.checkVerifyAccess, whatsApp.logout);
 route.post(`${apiVersion}/whatsapp/send-web`, verifyTokenController.checkVerifyAccess, whatsApp.sendWeb);
+route.post(`${apiVersion}/whatsapp/send-bulk-web`, verifyTokenController.checkVerifyAccess, whatsApp.sendBulkWeb);
 route.post(`${apiVersion}/whatsapp/send-api`, verifyApiController.checkVerifyApi, whatsApp.sendApi);
+route.post(`${apiVersion}/whatsapp/send-bulk-api`, verifyApiController.checkVerifyApi, whatsApp.sendBulkApi);
 
 /**
  * English: endpoint url for message
