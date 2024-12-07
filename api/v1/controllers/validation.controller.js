@@ -154,7 +154,7 @@ class ValidationController {
 
   /**
    * English: Validates send bulk message whatsapp data
-   * Indonesian: Memvalidasi data pengiriman massal pesan whatsapp
+   * Indonesian: Memvalidasi data pengiriman pesan masal whatsapp
    */
   sendWhatsAppBulkWeb(requestData) {
     const sendWhatsAppBulkWebSchema = joi
@@ -183,8 +183,8 @@ class ValidationController {
   }
 
   /**
-   * English: Validates send message whatsapp data
-   * Indonesian: Memvalidasi data pengiriman pesan whatsapp
+   * English: Validates send message bulk whatsapp data
+   * Indonesian: Memvalidasi data pengiriman pesan masal whatsapp
    */
   sendWhatsAppBulkAPI(requestData) {
     const sendWhatsAppBulkAPISchema = joi
