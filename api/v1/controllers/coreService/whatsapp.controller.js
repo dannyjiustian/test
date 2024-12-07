@@ -7,6 +7,7 @@ import handlerController from "../handler.controller.js";
 import uuidHashConfig from "../../configs/uuidHash.config.js";
 import whatsAppService from "../coreWhatsApp/whatsAppService.controller.js";
 import { PrismaClient } from "@prisma/client";
+import queueConfig from "../../configs/queue.config.js";
 
 /**
  * English: Initialize Prisma client
@@ -129,59 +130,82 @@ const sendWeb = async (req, res) => {
         code: 404,
       });
 
-    const session = whatsAppService.getSession(idDevice);
-
-    const checkNumber = await whatsAppService.checkNumber(session, to_number);
-    if (!checkNumber)
-      return handlerController.sendResponse({
-        res,
-        message: "Number WhatsApp does not exist!",
-        status: false,
-        code: 404,
-      });
-
-    const result = await session.sendMessage(checkNumber, { text: message });
-
-    // need save message to db for via web only
-    const findName = await prisma.contacts.findFirst({
-      select: {
-        name: true,
-      },
-      where: {
-        phone_number: to_number,
-        id_user,
-      },
-    });
-
-    const saveMessage = await prisma.messages.create({
-      select: {
-        id_send: true,
-        phone_number: true,
-        name: true,
-        message: true,
-        status: true,
-      },
-      data: {
-        id_device: idDevice,
-        id_user,
-        id_send: result.key.id,
-        phone_number: to_number,
-        name: findName ? findName.name : null,
-        message,
-        status: "pending",
-      },
+    // Enqueue messages
+    await queueConfig.queueWhatsAppMessage({
+      sessionId: idDevice,
+      to_number,
+      message,
+      idDevice,
+      id_user,
+      useWeb: true,
     });
 
     return handlerController.sendResponse({
       res,
-      message: "Successful send message!",
-      data: {
-        id_send: saveMessage.id_send,
-        phone_number: saveMessage.phone_number,
-        name: saveMessage.name,
-        message: saveMessage.message,
-        status: saveMessage.status,
+      message: "Message queued for processing.",
+    });
+  } catch (error) {
+    return handlerController.sendResponse({
+      res,
+      message: "An error occured during message send web.",
+      data: error.message,
+      status: false,
+      code: 500,
+    });
+  }
+};
+
+const sendBulkWeb = async (req, res) => {
+  const validationErrors = handlerController.handleValidationError(validationController.sendWhatsAppBulkWeb(req.body));
+  if (Object.keys(validationErrors).length > 0)
+    return handlerController.sendResponse({
+      res,
+      message: "Validation errors occurred.",
+      data: validationErrors,
+      status: false,
+      code: 422,
+    });
+
+  const { id_user } = req;
+  const { id_device, delay_per_number, message, numbers } = req.body;
+  const idDevice = uuidHashConfig.decrypt(id_device);
+
+  try {
+    const checkDevice = await prisma.devices.count({
+      where: {
+        id_device: idDevice,
+        status: "connected",
+        id_user,
       },
+    });
+
+    if (checkDevice === 0)
+      return handlerController.sendResponse({
+        res,
+        message: "Device does not exist!",
+        status: false,
+        code: 404,
+      });
+
+    // Enqueue messages
+    numbers.forEach(async (to_number, index) => {
+      const delay = index * delay_per_number; // Calculate delay for this number
+      await queueConfig.queueWhatsAppBulkMessage(
+        {
+          sessionId: idDevice,
+          to_number,
+          message,
+          idDevice,
+          id_user,
+          useWeb: true,
+        },
+        delay
+      ); // Pass the calculated delay to the job
+    });
+
+    return handlerController.sendResponse({
+      res,
+      message: "Bulk Messages queued for processing.",
     });
   } catch (error) {
     return handlerController.sendResponse({
@@ -214,23 +238,17 @@ const sendApi = async (req, res) => {
       where: { key },
     });
 
-    const session = whatsAppService.getSession(result.id_device);
-
-    const checkNumber = await whatsAppService.checkNumber(session, to_number);
-    if (!checkNumber)
-      return handlerController.sendResponse({
-        res,
-        message: "Number WhatsApp does not exist!",
-        status: false,
-        code: 404,
-      });
-
-    await session.sendMessage(checkNumber, { text: message });
+    // Enqueue messages
+    await queueConfig.queueWhatsAppMessage({
+      sessionId: result.id_device,
+      to_number,
+      message,
+      useWeb: false,
+    });
 
     return handlerController.sendResponse({
       res,
-      message: "Successful send message!",
-      data: { to_number, message },
+      message: "Message queued for processing.",
     });
   } catch (error) {
     return handlerController.sendResponse({
@@ -243,4 +261,53 @@ const sendApi = async (req, res) => {
   }
 };
 
-export default { authentication, logout, sendWeb, sendApi };
+const sendBulkApi = async (req, res) => {
+  const validationErrors = handlerController.handleValidationError(validationController.sendWhatsAppBulkAPI(req.body));
+  if (Object.keys(validationErrors).length > 0)
+    return handlerController.sendResponse({
+      res,
+      message: "Validation errors occurred.",
+      data: validationErrors,
+      status: false,
+      code: 422,
+    });
+
+  const { key } = req;
+  const { delay_per_number, message, numbers } = req.body;
+
+  try {
+    const result = await prisma.devices.findFirst({
+      select: { id_device: true },
+      where: { key },
+    });
+
+    // Enqueue messages
+    numbers.forEach(async (to_number, index) => {
+      const delay = index * delay_per_number; // Calculate delay for this number
+      await queueConfig.queueWhatsAppBulkMessage(
+        {
+          sessionId: result.id_device,
+          to_number,
+          message,
+          useWeb: false,
+        },
+        delay
+      ); // Pass the calculated delay to the job
+    });
+
+    return handlerController.sendResponse({
+      res,
+      message: "Bulk Messages queued for processing.",
+    });
+  } catch (error) {
+    return handlerController.sendResponse({
+      res,
+      message: "An error occured during message send web.",
+      data: error.message,
+      status: false,
+      code: 500,
+    });
+  }
+};
+
+export default { authentication, logout, sendWeb, sendBulkWeb, sendApi, sendBulkApi };
