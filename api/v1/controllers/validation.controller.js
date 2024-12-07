@@ -142,14 +142,30 @@ class ValidationController {
    * Indonesian: Memvalidasi data pengiriman pesan whatsapp
    */
   sendWhatsAppWeb(requestData) {
-    const sendWhatsAppSchema = joi
+    const sendWhatsAppWebSchema = joi
       .object({
         id_device: joi.string().max(40).required(),
         to_number: joi.string().max(14).pattern(/^\d+$/).required(),
         message: joi.string().required(),
       })
       .options({ abortEarly: false });
-    return sendWhatsAppSchema.validate(requestData);
+    return sendWhatsAppWebSchema.validate(requestData);
+  }
+
+  /**
+   * English: Validates send bulk message whatsapp data
+   * Indonesian: Memvalidasi data pengiriman massal pesan whatsapp
+   */
+  sendWhatsAppBulkWeb(requestData) {
+    const sendWhatsAppBulkWebSchema = joi
+      .object({
+        id_device: joi.string().max(40).required(),
+        delay_per_number: joi.number().integer().min(0).required(),
+        message: joi.string().required(),
+        numbers: joi.array().items(joi.string().max(14).pattern(/^\d+$/)).min(1).required(),
+      })
+      .options({ abortEarly: false });
+    return sendWhatsAppBulkWebSchema.validate(requestData);
   }
 
   /**
@@ -157,13 +173,28 @@ class ValidationController {
    * Indonesian: Memvalidasi data pengiriman pesan whatsapp
    */
   sendWhatsAppAPI(requestData) {
-    const sendWhatsAppSchema = joi
+    const sendWhatsAppAPISchema = joi
       .object({
         to_number: joi.string().max(14).pattern(/^\d+$/).required(),
         message: joi.string().required(),
       })
       .options({ abortEarly: false });
-    return sendWhatsAppSchema.validate(requestData);
+    return sendWhatsAppAPISchema.validate(requestData);
+  }
+
+  /**
+   * English: Validates send message whatsapp data
+   * Indonesian: Memvalidasi data pengiriman pesan whatsapp
+   */
+  sendWhatsAppBulkAPI(requestData) {
+    const sendWhatsAppBulkAPISchema = joi
+      .object({
+        delay_per_number: joi.number().integer().min(0).required(),
+        message: joi.string().required(),
+        numbers: joi.array().items(joi.string().max(14).pattern(/^\d+$/)).min(1).required(),
+      })
+      .options({ abortEarly: false });
+    return sendWhatsAppBulkAPISchema.validate(requestData);
   }
 }
 
