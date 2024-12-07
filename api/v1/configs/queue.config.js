@@ -336,6 +336,11 @@ class QueueConfig {
     });
   }
 
+  /**
+   * English: Adds an message to the queue for send to whatsapp
+   * Indonesian: Menambahkan pesan ke dalam antrian untuk kirim ke whatsapp
+   * @param {object} data - Data message
+   */
   async queueWhatsAppMessage(data) {
     await this.whatsappQueue.add(data, {
       attempts: 3,
@@ -345,6 +350,12 @@ class QueueConfig {
     });
   }
 
+  /**
+   * English: Adds an message bulk to the queue for send to whatsapp
+   * Indonesian: Menambahkan pesan masal ke dalam antrian untuk kirim ke whatsapp
+   * @param {object} data - Data message
+   * @param {string} delay - Delay for every each message
+   */
   async queueWhatsAppBulkMessage(data, delay) {
     await this.whatsappBulkQueue.add(data, {
       attempts: 3,
