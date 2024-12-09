@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp-api-container
+    ports:
+      - "3239:3000" # Map external port 3239 to internal port 3000
