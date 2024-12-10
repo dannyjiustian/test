@@ -1,6 +1,9 @@
 # Use Node.js 22 Alpine as base image
 FROM node:22-alpine
 
+# Install Git and other required tools
+RUN apk add --no-cache openssl
+
 # Set the working directory inside the container
 WORKDIR /app
 
