@@ -7,7 +7,7 @@ import { pino, qrcode } from "../../configs/server.config.js";
 import { PrismaClient } from "@prisma/client";
 import handlerController from "../handler.controller.js";
 import uuidHashConfig from "../../configs/uuidHash.config.js";
-import usePostgresqlAuthState from "./usePostgreSQLAuthState.js";
+import usePostgresqlAuthState from "./usePostgresqlAuthState.js";
 import ioConfig from "../../configs/io.config.js";
 import queueConfig from "../../configs/queue.config.js";
 
